@@ -1,0 +1,21 @@
+{ 	"id" : 12, 
+	"customer" : { 
+		"firstName" : "Ken", 
+		"lastName" : "Yagen",
+		"address" : "75 Geary St, San Francisco, CA 94062"
+	},
+	"orderItems" : [
+		{
+			"manufacturer" : "Philips",
+			"name" : "i-2",
+			"productID" : 12345,
+			"quantity" : 40
+		},
+		{
+			"manufacturer" : "Samsung",
+			"name" : "s-23",
+			"productID" : 22234,
+			"quantity" : 10
+		}
+	]
+}

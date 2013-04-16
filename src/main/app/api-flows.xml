@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:ajax="http://www.mulesoft.org/schema/mule/ajax"
+	xmlns:sr="http://www.mulesoft.org/schema/mule/service-registry"
+	xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml"
+	xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+	xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:data-mapper="http://www.mulesoft.org/schema/mule/ee/data-mapper" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:test="http://www.mulesoft.org/schema/mule/test"
+    xmlns:json="http://www.mulesoft.org/schema/mule/json"
+    xmlns:spring="http://www.springframework.org/schema/beans"
+    xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ajax http://www.mulesoft.org/schema/mule/ajax/current/mule-ajax.xsd
+http://www.mulesoft.org/schema/mule/service-registry http://www.mulesoft.org/schema/mule/service-registry/current/mule-service-registry.xsd
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/ee/data-mapper http://www.mulesoft.org/schema/mule/ee/data-mapper/current/mule-data-mapper.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
+http://www.mulesoft.org/schema/mule/test http://www.mulesoft.org/schema/mule/test/current/mule-test.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd" version="EE-3.4.0">
+    <data-mapper:config name="orderparser_grf" transformationGraphPath="orderparser.grf" doc:name="DataMapper"/>
+    <data-mapper:config name="jsonordertoxmlorder_grf" transformationGraphPath="jsonordertoxmlorder.grf" doc:name="DataMapper"/>
+    <data-mapper:config name="ordersummaryxmltoordersummaryjson_grf" transformationGraphPath="ordersummaryxmltoordersummaryjson.grf" doc:name="DataMapper"/>
+
+    <flow name="retrieveOrders" doc:name="retrieveOrders">
+        <logger level="INFO" message="return orders list" doc:name="Logger"/>
+        <expression-component doc:name="Retrieve Orders" ><![CDATA[payload = [
+['orderID':'12',
+'firstName':'Ken',
+'lastName':'Yagen',
+'address':'75 Geary St, San Francisco, CA 94062',
+'items':[
+	['itemManufacturer':'Philips','itemName':'i-2','itemProductID':'12345','itemQuantity':'40'],
+	['itemManufacturer':'Samsung','itemName':'s-23','itemProductID':'22234','itemQuantity':'10']
+]
+]
+]]]></expression-component>
+        <data-mapper:transform config-ref="orderparser_grf" doc:name="DataMapper"/>
+        <byte-array-to-object-transformer doc:name="Byte Array to Object"/>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+
+    <flow name="createOrderMock" doc:name="createOrderMock">
+        <set-variable variableName="ordersMemberId" value="some_generated_value" doc:name="Variable"/>
+    </flow>
+
+    <flow name="retrieveOrder" doc:name="retrieveOrder">
+        <logger level="INFO" message="return order with id: #[ordersMemberId]" doc:name="Logger"/>
+        <expression-component doc:name="Retrieve Orders" ><![CDATA[payload = [
+['orderID':'12',
+'firstName':'Ken',
+'lastName':'Yagen',
+'address':'75 Geary St, San Francisco, CA 94062',
+'items':[
+	['itemManufacturer':'Philips','itemName':'i-2','itemProductID':'12345','itemQuantity':'40'],
+	['itemManufacturer':'Samsung','itemName':'s-23','itemProductID':'22234','itemQuantity':'10']
+]
+]
+]]]></expression-component>
+        <data-mapper:transform config-ref="orderparser_grf" doc:name="DataMapper"/>
+        <byte-array-to-object-transformer doc:name="Byte Array to Object"/>
+    </flow>
+
+    <flow name="createOrder" doc:name="createOrder">
+        <data-mapper:transform config-ref="jsonordertoxmlorder_grf" doc:name="Data-mapper"/>
+        <mulexml:xslt-transformer maxIdleTransformers="2" maxActiveTransformers="5" xsl-file="XmlToSoapEnvelope.xsl" doc:name="Xml to Soap Envelope"/>
+        <set-property propertyName="#['X-Anypoint-ContractKey']" value="5159f7e4e4b0c2142d10dc27" doc:name="Set Contract Key"/>
+        <dynamic-all doc:name="Dynamic Router">
+            <sr:service-contract-lookup serviceRoundRobin="false" serviceContract="5159f7e4e4b0c2142d10dc27"/>
+        </dynamic-all>
+        <mulexml:xslt-transformer maxIdleTransformers="2" maxActiveTransformers="5" xsl-file="SoapEnvelopeToBodyChild.xslt" doc:name="Xml to Soap Envelope"/>
+        <data-mapper:transform config-ref="ordersummaryxmltoordersummaryjson_grf" doc:name="Data-mapper"/>
+        <byte-array-to-object-transformer doc:name="Byte Array to Object"/>
+        <json:object-to-json-transformer doc:name="Object to JSON"/>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        <catch-exception-strategy doc:name="Catch Exception Strategy">
+            <logger message="Routing not successful for #[payload]" level="INFO" doc:name="Logger"/>
+        </catch-exception-strategy>
+    </flow>
+
+</mule>

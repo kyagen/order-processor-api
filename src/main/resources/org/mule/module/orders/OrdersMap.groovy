@@ -1,0 +1,12 @@
+package org.mule.module.orders
+
+class OrdersMap {
+	def orders = [
+		[orderID:'12',firstName:'Ken',lastName:'Yagen',address:'75 Geary St, San Francisco, CA 94062', items:
+		  [
+			[itemManufacturer:'Philips',itemName:'i-2',itemProductID:'12345',itemQuantity:'40'],
+			[itemManufacturer:'Samsung',itemName:'s-23',itemProductID:'22234',itemQuantity:'10']
+		  ]
+		]
+	]
+}

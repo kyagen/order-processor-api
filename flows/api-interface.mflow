@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<mule-configuration xmlns="http://www.mulesoft.com/tooling/messageflow" name="api-interface">
+    <global-unknown wrapIn="mule-api" wrapNSPref="" wrapNSURL="http://www.mulesoft.org/schema/mule/api" description="false" unknownName="Orders" parentIndex="0" index="1" entity-id="global-unknown#1">
+        <content>&lt;rest:interface xmlns:rest=&quot;http://www.mulesoft.org/schema/mule/api-rest&quot; xmlns:ee=&quot;http://www.mulesoft.org/schema/mule/ee/core&quot; name=&quot;Orders&quot;&gt;
+        &lt;rest:collection-resource name=&quot;orders&quot;&gt;
+            &lt;rest:retrieve flow-ref=&quot;retrieveOrders&quot;&gt;
+                &lt;rest:representation mediaType=&quot;application/json&quot;&gt;&lt;/rest:representation&gt;
+            &lt;/rest:retrieve&gt;
+            &lt;rest:member&gt;
+                &lt;rest:representation mediaType=&quot;application/json&quot;&gt;&lt;/rest:representation&gt;
+                &lt;rest:create flow-ref=&quot;createOrder&quot;&gt;
+                	&lt;rest:representation mediaType=&quot;application/json&quot;&gt;&lt;/rest:representation&gt;
+                &lt;/rest:create&gt;	
+                &lt;rest:retrieve flow-ref=&quot;retrieveOrder&quot;&gt;&lt;/rest:retrieve&gt;
+            &lt;/rest:member&gt;
+        &lt;/rest:collection-resource&gt;
+    &lt;/rest:interface&gt;</content>
+    </global-unknown>
+    <global-unknown wrapIn="mule-api" wrapNSPref="" wrapNSURL="http://www.mulesoft.org/schema/mule/api" description="false" unknownName="Fulfillment" parentIndex="0" index="10" entity-id="global-unknown#2">
+        <content>&lt;rest:service xmlns:rest=&quot;http://www.mulesoft.org/schema/mule/api-rest&quot; xmlns:ee=&quot;http://www.mulesoft.org/schema/mule/ee/core&quot; name=&quot;Fulfillment&quot; interface-ref=&quot;Orders&quot;&gt;
+        &lt;http:inbound-endpoint xmlns:http=&quot;http://www.mulesoft.org/schema/mule/http&quot; port=&quot;${http.port}&quot; host=&quot;localhost&quot; path=&quot;api&quot;&gt;
+            &lt;mule:object-to-string-transformer xmlns:mule=&quot;http://www.mulesoft.org/schema/mule/core&quot;&gt;&lt;/mule:object-to-string-transformer&gt;
+        &lt;/http:inbound-endpoint&gt;
+    &lt;/rest:service&gt;</content>
+    </global-unknown>
+</mule-configuration>
