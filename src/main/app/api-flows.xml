@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:ajax="http://www.mulesoft.org/schema/mule/ajax"
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:ajax="http://www.mulesoft.org/schema/mule/ajax"
 	xmlns:sr="http://www.mulesoft.org/schema/mule/service-registry"
 	xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml"
 	xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
@@ -18,7 +18,8 @@ http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/cor
 http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
 http://www.mulesoft.org/schema/mule/test http://www.mulesoft.org/schema/mule/test/current/mule-test.xsd
 http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
-http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd" version="EE-3.4.0">
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd" version="EE-3.4.0">
     <data-mapper:config name="orderparser_grf" transformationGraphPath="orderparser.grf" doc:name="DataMapper"/>
     <data-mapper:config name="jsonordertoxmlorder_grf" transformationGraphPath="jsonordertoxmlorder.grf" doc:name="DataMapper"/>
     <data-mapper:config name="ordersummaryxmltoordersummaryjson_grf" transformationGraphPath="ordersummaryxmltoordersummaryjson.grf" doc:name="DataMapper"/>
@@ -61,22 +62,32 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
         <data-mapper:transform config-ref="orderparser_grf" doc:name="DataMapper"/>
         <byte-array-to-object-transformer doc:name="Byte Array to Object"/>
     </flow>
-
     <flow name="createOrder" doc:name="createOrder">
         <data-mapper:transform config-ref="jsonordertoxmlorder_grf" doc:name="Data-mapper"/>
         <mulexml:xslt-transformer maxIdleTransformers="2" maxActiveTransformers="5" xsl-file="XmlToSoapEnvelope.xsl" doc:name="Xml to Soap Envelope"/>
-        <set-property propertyName="#['X-Anypoint-ContractKey']" value="5159f7e4e4b0c2142d10dc27" doc:name="Set Contract Key"/>
+        <set-property propertyName="#['X-Anypoint-ContractKey']" value="${asr.contract}" doc:name="Set Contract Key"/>
         <dynamic-all doc:name="Dynamic Router">
-            <sr:service-contract-lookup serviceRoundRobin="false" serviceContract="5159f7e4e4b0c2142d10dc27"/>
+            <sr:service-contract-lookup serviceRoundRobin="false" serviceContract="${asr.contract}"/>
         </dynamic-all>
+        <byte-array-to-object-transformer doc:name="Byte Array to Object"/>
+        <message-filter throwOnUnaccepted="true" doc:name="429 Exception Filter">
+            <message-property-filter pattern="http.status!=429" caseSensitive="true" scope="inbound"/>
+        </message-filter>
         <mulexml:xslt-transformer maxIdleTransformers="2" maxActiveTransformers="5" xsl-file="SoapEnvelopeToBodyChild.xslt" doc:name="Xml to Soap Envelope"/>
+        <byte-array-to-object-transformer doc:name="Byte Array to Object"/>
         <data-mapper:transform config-ref="ordersummaryxmltoordersummaryjson_grf" doc:name="Data-mapper"/>
         <byte-array-to-object-transformer doc:name="Byte Array to Object"/>
         <json:object-to-json-transformer doc:name="Object to JSON"/>
-        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
-        <catch-exception-strategy doc:name="Catch Exception Strategy">
-            <logger message="Routing not successful for #[payload]" level="INFO" doc:name="Logger"/>
-        </catch-exception-strategy>
+        <logger message="###### Arrived at end of flow
+" level="INFO" doc:name="Logger"/>
+        <choice-exception-strategy doc:name="Choice Exception Strategy">
+            <catch-exception-strategy when="#[exception.causedBy(org.mule.api.routing.filter.FilterUnacceptedException)]" doc:name="Catch Exception Strategy">
+                <logger message="###### Request not Authorized: #[message.payload]" level="WARN" doc:name="Logger"/>
+            </catch-exception-strategy>
+            <catch-exception-strategy doc:name="Catch Exception Strategy">
+                <logger message="General Exception #[message]" level="INFO" doc:name="Logger"/>
+            </catch-exception-strategy>
+        </choice-exception-strategy>
     </flow>
 
 </mule>
