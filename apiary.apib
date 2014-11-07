@@ -1,0 +1,67 @@
+FORMAT: 1A
+
+# Order API 2
+Order API allows direct ecommerce ordering
+
+## Notes Collection 2 [/order]
+### Place an order [POST]
+
++ Response 200 (application/json)
+
+        [{
+  "_type" : "order_response",
+  "price_components" : {
+    "shipping" : 0,
+    "subtotal" : 1999,
+    "tax" : 0,
+    "total" : 1999
+  },
+  "merchant_order_ids" : [
+    {
+      "merchant_order_id" : "112-1234567-7272727",
+      "merchant" : "amazon",
+      "account" : "timbeaver@gmail.com",
+      "placed_at" : ISODate("2014-07-02T23:51:08.366Z")
+    }
+  ],
+  "tracking" : [
+    {
+      "merchant_order_id" : "112-1234567-7272727",
+      "carrier" : "Fedex",
+      "tracking_number" : "9261290100129790891234",
+      "obtained_at" : ISODate("2014-07-03T23:22:48.165Z")
+    }
+  ],
+  "request" : {
+    ...
+  }
+}]
+
+### Create a Note [POST]
++ Request (application/json)
+
+        { "title": "Buy cheese and bread for breakfast." }
+
++ Response 201 (application/json)
+
+        { "id": 3, "title": "Buy cheese and bread for breakfast." }
+
+## Note [/notes/{id}]
+A single Note object with all its details
+
++ Parameters
+    + id (required, number, `1`) ... Numeric `id` of the Note to perform action with. Has example value.
+
+### Retrieve a Note [GET]
++ Response 200 (application/json)
+
+    + Header
+
+            X-My-Header: The Value
+
+    + Body
+
+            { "id": 2, "title": "Pick-up posters from post-office" }
+
+### Remove a Note [DELETE]
++ Response 204
